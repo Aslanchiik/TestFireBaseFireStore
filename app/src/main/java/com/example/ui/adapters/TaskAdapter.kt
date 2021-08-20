@@ -21,7 +21,7 @@ class TaskAdapter  : RecyclerView.Adapter<TaskAdapter.ViewHolder>() {
 
         fun bind(taskModel: TaskModel) {
              binding.itemName.text = taskModel.name
-            binding.dateTxt.text = taskModel.time
+         //   binding.dateTxt.text = taskModel.time
         }
 
     }

@@ -1,6 +1,5 @@
 package com.example.ui.fargments
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,8 +14,6 @@ import com.example.ui.adapters.TaskAdapter
 import com.google.firebase.firestore.*
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.collections.ArrayList
 
 
@@ -26,7 +23,8 @@ class FireBase : Fragment() {
     private lateinit var binding: FragmentFireBaseBinding
     private lateinit var fireStoreSave: FirebaseFirestore
     private val db = Firebase.firestore
-    private val taskAdapter: TaskAdapter = TaskAdapter()
+    private val taskAdapter:
+            TaskAdapter = TaskAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,18 +48,22 @@ class FireBase : Fragment() {
         }
     }
 
-    @SuppressLint("SimpleDateFormat")
+    //  @SuppressLint("SimpleDateFormat")
     private fun setupDataToFireBase() {
+
         fireStoreSave = FirebaseFirestore.getInstance()
 
         binding.btnGo.setOnClickListener {
-            val date = SimpleDateFormat("dd/M/yyyy hh:mm:ss")
-            val time = date.format(Date())
+
+            //  val date = SimpleDateFormat("dd/M/yyyy hh:mm:ss")
+            //  val time = date.format(Date())
             Toast.makeText(context, "Tag", Toast.LENGTH_SHORT).show()
             val user = hashMapOf(
                 "first" to binding.editText.text.toString(),
-                "second" to time
+
+                //  "second" to time
             )
+
 
             db.collection("users").add(user)
                 .addOnCompleteListener { document ->
@@ -77,7 +79,7 @@ class FireBase : Fragment() {
 
     private fun getDataFromServer() {
         db.collection("users")
-            .orderBy("second", Query.Direction.ASCENDING)
+            // .orderBy("first", Query.Direction.ASCENDING)
             .get()
             .addOnSuccessListener { result ->
                 val list: ArrayList<TaskModel> = ArrayList()
@@ -85,12 +87,11 @@ class FireBase : Fragment() {
                 for (document in result) {
 
                     val model: String = document.getString("first").toString()
-                    val second: String = document.getString("second").toString()
+                    //  val second: String = document.getString("second").toString()
 
-                    val models = TaskModel(model, second)
+                    val models = TaskModel(model)
 
-                    Log.d("TAG"
-                        ,"${document.id} => ${document.data}")
+                    Log.d("TAG", "${document.id} => ${document.data}")
 
                     list.add(models)
                 }
