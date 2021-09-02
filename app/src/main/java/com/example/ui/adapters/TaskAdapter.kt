@@ -1,44 +1,52 @@
 package com.example.ui.adapters
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.model.TaskModel
 import com.example.testfirebasefirestore.databinding.ItemAdapterBinding
 
-class TaskAdapter  : RecyclerView.Adapter<TaskAdapter.ViewHolder>() {
+class TaskAdapter : ListAdapter<TaskModel, TaskAdapter.ViewHolder>(diffCallback) {
 
-    lateinit var binding : ItemAdapterBinding
-    private var list : ArrayList<TaskModel> = ArrayList()
-
-      fun addAllList (model : ArrayList<TaskModel>) {
-          this.list = model
-          notifyDataSetChanged()
-      }
-
-  inner  class ViewHolder(itemView: View) : RecyclerView.ViewHolder (itemView){
-
+    class ViewHolder(private val binding: ItemAdapterBinding) :
+        RecyclerView.ViewHolder(binding.root) {
         fun bind(taskModel: TaskModel) {
-             binding.itemName.text = taskModel.name
-         //   binding.dateTxt.text = taskModel.time
+            binding.textViewTitle.text = taskModel.name
+            binding.textViewPriority.text = taskModel.time
+
         }
 
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        binding = ItemAdapterBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ViewHolder(binding.root)
+        val binding = ItemAdapterBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(list[position])
+        getItem(position)?.let { holder.bind(it) }
     }
 
-    override fun getItemCount(): Int {
-        return list.size
-    }
+    companion object {
+        val diffCallback = object : DiffUtil.ItemCallback<TaskModel>() {
+            override fun areItemsTheSame(
+                oldItem: TaskModel,
+                newItem: TaskModel
+            ): Boolean {
+                return oldItem.name == newItem.name
+            }
 
+            override fun areContentsTheSame(
+                oldItem: TaskModel,
+                newItem: TaskModel)
+            : Boolean {
+                return oldItem == newItem
+            }
+
+        }
+    }
 
 }
 

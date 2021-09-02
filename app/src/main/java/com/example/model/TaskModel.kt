@@ -2,7 +2,10 @@ package com.example.model
 
 
 data class TaskModel(
-    var name: String,
- //   var time: String
+    var id: Int = 0,
+    var name: String = "",
+    var number: Long? = null,
+    var time: String = ""
+    // var time: String
 )
 

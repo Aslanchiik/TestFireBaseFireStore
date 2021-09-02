@@ -11,5 +11,4 @@
         android:label="fragment_fire_base"
         tools:layout="@layout/fragment_fire_base" />
 
-
 </navigation>

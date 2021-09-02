@@ -1,44 +1,57 @@
 package com.example.ui.fargments
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Context.WIFI_SERVICE
+import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.model.TaskModel
 import com.example.testfirebasefirestore.databinding.FragmentFireBaseBinding
 import com.example.ui.adapters.TaskAdapter
-import com.google.firebase.firestore.*
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import kotlin.collections.ArrayList
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
+import java.math.BigInteger
+import java.net.InetAddress
+import java.net.UnknownHostException
+import java.nio.ByteOrder
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.HashMap
 
 
+
+@InternalCoroutinesApi
+@AndroidEntryPoint
 class FireBase : Fragment() {
 
-
     private lateinit var binding: FragmentFireBaseBinding
-    private lateinit var fireStoreSave: FirebaseFirestore
-    private val db = Firebase.firestore
-    private val taskAdapter:
-            TaskAdapter = TaskAdapter()
+    private val viewModel: FirebaseFireStoreViewModel by viewModels()
+    private val taskAdapter: TaskAdapter = TaskAdapter()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
         binding = FragmentFireBaseBinding.inflate(inflater, container, false)
         return binding.root
     }
 
+    @ExperimentalCoroutinesApi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
-        getDataFromServer()
-        setupDataToFireBase()
+        viewModel.getCoroutines()
+        updateFromDataServer()
+        setupDataToFirestore()
     }
 
     private fun setupRecyclerView() {
@@ -48,59 +61,74 @@ class FireBase : Fragment() {
         }
     }
 
-    //  @SuppressLint("SimpleDateFormat")
-    private fun setupDataToFireBase() {
+    private fun verifyAvailableNetwork(): Boolean {
+        val connectivityManager =
+            requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val netInfo = connectivityManager.activeNetworkInfo
+        return netInfo != null && netInfo.isConnected
+    }
 
-        fireStoreSave = FirebaseFirestore.getInstance()
+    private fun updateFromDataServer() {
+            if (verifyAvailableNetwork()) {
+                viewModel.data.observe(viewLifecycleOwner, {
+                    taskAdapter.submitList(it)
+                })
+            }
+    }
 
+    @SuppressLint("SimpleDateFormat")
+    private fun setupDataToFirestore() {
         binding.btnGo.setOnClickListener {
+            if (verifyAvailableNetwork()) {
+                val number = Date().time
+                val date = SimpleDateFormat("HH:mm:ss")
+                val time = date.format(Date())
 
-            //  val date = SimpleDateFormat("dd/M/yyyy hh:mm:ss")
-            //  val time = date.format(Date())
-            Toast.makeText(context, "Tag", Toast.LENGTH_SHORT).show()
-            val user = hashMapOf(
-                "first" to binding.editText.text.toString(),
-
-                //  "second" to time
-            )
-
-
-            db.collection("users").add(user)
-                .addOnCompleteListener { document ->
-                    if (document.isSuccessful) {
-                        Log.e("tag", "Is Good")
-                    } else {
-                        Log.e("tag", "Not bad$document")
-                    }
-                }
-            getDataFromServer()
+                val user = HashMap<String, Any>()
+                user["name"] = binding.editText.text.toString()
+                user["number"] = number
+                user["time"] = time
+                binding.editText.setText("")
+                viewModel.setupData(user)
+            }
+        }
+        binding.deleteButton.setOnClickListener {
+            taskAdapter.submitList(null)
+            viewModel.deleteCollection()
         }
     }
 
-    private fun getDataFromServer() {
-        db.collection("users")
-            // .orderBy("first", Query.Direction.ASCENDING)
-            .get()
-            .addOnSuccessListener { result ->
-                val list: ArrayList<TaskModel> = ArrayList()
 
-                for (document in result) {
+    private fun getWifi() {
 
-                    val model: String = document.getString("first").toString()
-                    //  val second: String = document.getString("second").toString()
+        val date = SimpleDateFormat("HH:mm:ss")
+        Log.e("tag", date.format(Date()))
 
-                    val models = TaskModel(model)
+        val manager =
+            requireContext().applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
+        val dhcp = manager.dhcpInfo
 
-                    Log.d("TAG", "${document.id} => ${document.data}")
+        var apiAddress = dhcp.gateway
+        apiAddress =
+            if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) Integer.reverseBytes(
+                apiAddress
+            )
+            else apiAddress
 
-                    list.add(models)
-                }
-                taskAdapter.addAllList(list)
-            }
-            .addOnFailureListener { exception ->
-                Log.w("TAG", "Error getting documents.", exception)
-            }
-
-
+        val apiAddressByte: ByteArray = BigInteger.valueOf(apiAddress.toLong()).toByteArray()
+        try {
+            val myAddress: InetAddress = InetAddress.getByAddress(apiAddressByte)
+            binding.ipAddress.text = myAddress.hostAddress
+            Log.e("tag", myAddress.hostAddress)
+        } catch (e: UnknownHostException) {
+            Log.e("Wifi class", "Error getting IP address")
+        }
     }
+
+
+
+
+
+
+
 }
